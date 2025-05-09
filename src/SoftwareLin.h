@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef __SoftwareLin_h
 #define __SoftwareLin_h
 
-#include "espsoftwareserial/src/SoftwareSerial.h"
+#include <SoftwareSerial.h>
 #include "freertos/semphr.h"
 
 class SoftwareLin : public EspSoftwareSerial::UART
