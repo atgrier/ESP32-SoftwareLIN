@@ -59,7 +59,7 @@ public:
      * 
      * @return Whether the Break Field has been detected
      */
-    bool checkBreak();
+    bool checkBreak(uint32_t timeout = 0);
 
     /**
      * @brief
@@ -78,7 +78,7 @@ public:
      * Return 0 if setAutoBaud() failed, and the baud rate will
      * not be changed.
      */
-    uint32_t setAutoBaud(const uint32_t commonBaud[], int commonBaudSize);
+    uint32_t setAutoBaud(const uint32_t commonBaud[], int commonBaudSize, uint32_t timeout = 0);
     
     /**
      * @brief Notify SoftwareLin the LIN frame has ended.

@@ -54,14 +54,18 @@ void IRAM_ATTR SoftwareLin::sendBreak(int breakBits, int delimiterBits)
     m_inFrame = true;
 }
 
-bool IRAM_ATTR SoftwareLin::checkBreak()
+bool IRAM_ATTR SoftwareLin::checkBreak(uint32_t timeout)
 {
     assert(false == m_inFrame);
+    unsigned long start = millis();
 
     bool breakDetected = false;
     if (!m_isrBuffer->available()) {
-        while (pdPASS != xSemaphoreTake(m_isrSem, portMAX_DELAY))
-            ;
+        while (pdPASS != xSemaphoreTake(m_isrSem, portMAX_DELAY)) {
+            if (timeout && (millis() - start > timeout)) {
+                return false;
+            }
+        }
     }
     while (m_isrBuffer->available()) {
         // This section is copied from `void UARTBase::rxBits(const uint32_t isrTick)`
@@ -98,7 +102,7 @@ bool IRAM_ATTR SoftwareLin::checkBreak()
     return breakDetected;
 }
 
-uint32_t IRAM_ATTR SoftwareLin::setAutoBaud(const uint32_t commonBaud[], int commonBaudSize)
+uint32_t IRAM_ATTR SoftwareLin::setAutoBaud(const uint32_t commonBaud[], int commonBaudSize, uint32_t timeout)
 {
     assert(true == m_inFrame);
 
@@ -107,6 +111,7 @@ uint32_t IRAM_ATTR SoftwareLin::setAutoBaud(const uint32_t commonBaud[], int com
     m_bitTicks = (microsToTicks(1000000UL) + 1 / 2) / 1;
     // This is to satisfy the assertion in detectBaud();
     
+    unsigned long start = millis();
     uint32_t detectedBaud = detectBaud();
     for (int i = 0; i < 3; ++i) {
         // After detectBaud() finished, there should be totally
@@ -115,10 +120,15 @@ uint32_t IRAM_ATTR SoftwareLin::setAutoBaud(const uint32_t commonBaud[], int com
 
         if (!m_isrBuffer->available()) {
             while (pdPASS != xSemaphoreTake(m_isrSem, portMAX_DELAY))
-                ;
+                if (timeout && (millis() - start > timeout)) {
+                    return 0;
+                }
         }
         while (!m_isrBuffer->available()) {
-            ; // wait until can pop
+            // ; // wait until can pop
+            if (timeout && (millis() - start > timeout)) {
+                return 0;
+            }
         }
         uint32_t isrTick = m_isrBuffer->pop();
         const bool level = (m_isrLastTick & 1) ^ m_invert;
@@ -159,7 +169,7 @@ void SoftwareLin::endFrame()
 int SoftwareLin::read(uint8_t* buffer, size_t size)
 {
     assert(true == m_inFrame);
-
+    // TODO: Do I need to add a timeout to this read()?
     return UART::read(buffer, size);
 }
 
