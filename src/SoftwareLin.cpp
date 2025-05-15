@@ -61,7 +61,7 @@ bool IRAM_ATTR SoftwareLin::checkBreak(uint32_t timeout)
 
     bool breakDetected = false;
     if (!m_isrBuffer->available()) {
-        while (pdPASS != xSemaphoreTake(m_isrSem, portMAX_DELAY)) {
+        while (pdPASS != xSemaphoreTake(m_isrSem, 500)) {
             if (timeout && (millis() - start > timeout)) {
                 return false;
             }
@@ -107,10 +107,10 @@ uint32_t IRAM_ATTR SoftwareLin::setAutoBaud(const uint32_t commonBaud[], int com
     assert(true == m_inFrame);
 
     uint32_t m_bitTicks_bak = m_bitTicks;
-    
+
     m_bitTicks = (microsToTicks(1000000UL) + 1 / 2) / 1;
     // This is to satisfy the assertion in detectBaud();
-    
+
     unsigned long start = millis();
     uint32_t detectedBaud = detectBaud();
     for (int i = 0; i < 3; ++i) {
@@ -119,7 +119,7 @@ uint32_t IRAM_ATTR SoftwareLin::setAutoBaud(const uint32_t commonBaud[], int com
         // Popping the rest rising/falling edges of the SYNC bytes.
 
         if (!m_isrBuffer->available()) {
-            while (pdPASS != xSemaphoreTake(m_isrSem, portMAX_DELAY))
+            while (pdPASS != xSemaphoreTake(m_isrSem, 500))
                 if (timeout && (millis() - start > timeout)) {
                     return 0;
                 }
@@ -158,7 +158,7 @@ uint32_t IRAM_ATTR SoftwareLin::setAutoBaud(const uint32_t commonBaud[], int com
     // Set baud rate to the detected baud rate
     m_bitTicks = (microsToTicks(1000000UL) + baud / 2) / baud;
 
-    return baud;    
+    return baud;
 }
 
 void SoftwareLin::endFrame()
